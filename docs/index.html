@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nibtara — dues &amp; settlement</title>
+<meta name="description" content="Nibtara ages your outstanding customer dues (60/90 days) and prints a settlement slip with 2–3 waiver/instalment offers — a defensible number for the awkward conversation. No interest.">
+<style>
+  :root{--bg:#f7f4ee;--card:#fff;--ink:#231a0e;--muted:#695842;--brand:#8e6e3e;--brand-ink:#5e4826;--line:#ebe0d0;--accent:#f3ebdb}
+  @media (prefers-color-scheme:dark){:root{--bg:#14110b;--card:#1d1810;--ink:#eee4d4;--muted:#b6a488;--brand:#c39a5e;--brand-ink:#eed6ac;--line:#2a2216;--accent:#231c12}}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header{padding:64px 0 24px;text-align:center}
+  .eyebrow{color:var(--brand);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+  h1{font-size:44px;margin:.2em 0 .1em;letter-spacing:-.02em}
+  .tag{color:var(--muted);font-size:19px;max-width:640px;margin:8px auto 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:28px 0}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:34px}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card h2{margin:0 0 8px;font-size:20px}
+  input{padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:14px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.row input{flex:1;min-width:80px}
+  button{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:9px 14px;cursor:pointer}
+  .due{padding:10px 0;border-top:1px dashed var(--line)}
+  .badge{font-size:12px;padding:2px 8px;border-radius:20px;background:var(--accent)}
+  .stale{color:#c0392b}.aging{color:#c47f17}
+  .opt{display:flex;justify-content:space-between;font-size:14px;padding:2px 0;color:var(--muted)}
+  footer{color:var(--muted);font-size:13px;text-align:center;padding:40px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Nibtara · निबटारा</div>
+    <h1>A number for "please clear the old balance"</h1>
+    <p class="tag">Old dues get quietly written off or renegotiated with zero maths. Nibtara ages each
+      balance and prints a settlement slip with a couple of fair offers. No interest, no loan framing.</p>
+  </header>
+  <div class="grid">
+    <div class="card">
+      <h2>Try it</h2>
+      <div class="row"><input id="cu" placeholder="Customer"><input id="am" type="number" placeholder="₹ amount" style="max-width:110px"><input id="si" placeholder="Since YYYY-MM-DD" value="2026-05-01"><button onclick="add()">Add</button></div>
+      <div id="list"></div>
+    </div>
+    <div class="card">
+      <h2>Aging + a fair offer</h2>
+      <p style="color:var(--muted)">Dues crossing 60 and 90 days get flagged. Each carries a settlement
+        slip: pay in full, clear now with a small goodwill waiver, or three instalments — a concrete
+        ask for the awkward conversation.</p>
+      <p style="color:var(--muted);font-size:14px">Flutter → Go → PostgreSQL journal service.</p>
+    </div>
+  </div>
+  <footer>Nibtara · a local-first shopkeeper tool · offline, no account.</footer>
+</div>
+<script>
+  const dues=[]; const inr=v=>'₹'+(+v).toFixed(2);
+  function bucket(si){ const d=DateTime(si); if(d===null) return 'current'; const days=Math.floor((Date.now()-d)/86400000); return days>90?'stale':(days>=60?'aging':'current'); }
+  function DateTime(s){ const t=Date.parse(s); return isNaN(t)?null:t; }
+  function opts(a){ return [['Pay in full now',a],['Clear now, 10% goodwill waiver',a*0.9],['3 monthly instalments',a/3]]; }
+  function render(){
+    document.getElementById('list').innerHTML=dues.map(d=>{
+      const b=bucket(d.si);
+      const badge=`<span class="badge ${b}">${b}</span>`;
+      const o=opts(d.am).map(([k,v])=>`<div class="opt"><span>${k}</span><b>${inr(v)}</b></div>`).join('');
+      return `<div class="due"><div style="display:flex;justify-content:space-between"><b>${d.cu} · ${inr(d.am)}</b>${badge}</div>${o}</div>`;
+    }).join('')||'<div style="color:var(--muted)">No dues yet.</div>';
+  }
+  function add(){
+    const g=id=>document.getElementById(id).value.trim();
+    const am=+document.getElementById('am').value||0;
+    if(!g('cu')||am<=0) return;
+    dues.unshift({cu:g('cu'),am,si:g('si')});
+    document.getElementById('cu').value=''; document.getElementById('am').value=''; render();
+  }
+  render();
+</script>
+</body>
+</html>
